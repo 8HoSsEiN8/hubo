@@ -50,18 +50,30 @@ ref = ha.HUBO_REF()
 # Get the current feed-forward (state) 
 [statuss, framesizes] = s.get(state, wait=False, last=False)
 
-#Set Left Elbow Bend (LEB) and Right Shoulder Pitch (RSP) to  -0.2 rad and 0.1 rad respectively
-ref.ref[ha.LEB] = -0.2
-ref.ref[ha.RSP] = 0.4
-
-# Print out the actual position of the LEB
-print "Joint = ", state.joint[ha.LEB].pos
-
-# Print out the Left foot torque in X
-print "Mx = ", state.ft[ha.HUBO_FT_L_FOOT].m_x
+# Get in the right position for waiving your hand
+ref.ref[ha.LSR] = 0.5
+ref.ref[ha.LSP] = -0.3
+ref.ref[ha.LSY] = 1
+ref.ref[ha.LEB] = -2
 
 # Write to the feed-forward channel
 r.put(ref)
+
+while(1):
+	ref.ref[ha.LEB] = -1
+	r.put(ref)
+	time.sleep(2)
+	ref.ref[ha.LEB] = -2.5
+	r.put(ref)
+	time.sleep(2)
+
+	
+#time.sleep(2)
+#ref.ref[ha.LEB] = 0
+# Write to the feed-forward channel
+#r.put(ref)
+
+
 
 # Close the connection to the channels
 r.close()
