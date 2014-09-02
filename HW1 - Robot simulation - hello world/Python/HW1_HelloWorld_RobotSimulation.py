@@ -27,12 +27,10 @@
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # */
 
-
-
 import hubo_ach as ha
 import ach
 import sys
-import time
+import time, timeit
 from ctypes import *
 
 # Open Hubo-Ach feed-forward and feed-back (reference and state) channels
@@ -59,21 +57,40 @@ ref.ref[ha.LEB] = -2
 # Write to the feed-forward channel
 r.put(ref)
 
-while(1):
+tic = timeit.default_timer()
+while(1):	# Check how long it will take to go to the waving position
+	time.sleep(.005)
+	[statuss, framesizes] = s.get(state, wait=False, last=False)
+	print "Joint LSR = ", state.joint[ha.LSR].pos
+	if (abs(state.joint[ha.LSR].pos - ref.ref[ha.LSR]) < 0.01):
+		print "Time to get to position: ", (timeit.default_timer() - tic) # elapsed time in seconds
+		break
+
+period = 1
+nWaves = 30
+while(1):	# Start waiving and time yourself
+	tic = timeit.default_timer()
 	ref.ref[ha.LEB] = -1
 	r.put(ref)
-	time.sleep(2)
+	time.sleep(period/2.0)
 	ref.ref[ha.LEB] = -2.5
 	r.put(ref)
-	time.sleep(2)
+	time.sleep(period/2.0)	
+	nWaves = nWaves - 1
+	if (nWaves < 0):
+		print "waving done!"
+		break
+	print "Period is: ", (timeit.default_timer() - tic) # elapsed time in seconds
+	print nWaves, " waves left!"
 
-	
-#time.sleep(2)
-#ref.ref[ha.LEB] = 0
+# Go back to zeros
+ref.ref[ha.LSR] = 0
+ref.ref[ha.LSP] = 0
+ref.ref[ha.LSY] = 0
+ref.ref[ha.LEB] = 0
+
 # Write to the feed-forward channel
-#r.put(ref)
-
-
+r.put(ref)
 
 # Close the connection to the channels
 r.close()
