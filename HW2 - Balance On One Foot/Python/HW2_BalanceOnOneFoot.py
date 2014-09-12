@@ -1,4 +1,5 @@
 #!/usr/bin/python
+import math
 
 def sWait(seconds):
 	print "sleeping for: ", seconds, " seconds"
@@ -31,6 +32,7 @@ ref = ha.HUBO_REF()
 # Get the current feed-forward (state) 
 [statuss, framesizes] = s.get(state, wait=False, last=False)
 
+print "Tilting ..."
 pos = [.01, .02, .04, .06, .08, .1, .12, .14, .17]
 for p in pos:
 	ref.ref[ha.LHR] = -p
@@ -43,7 +45,9 @@ for p in pos:
 	r.put(ref)
 
 	sWait(.2)
+sWait(.5)
 
+print "Lifting the right foot ..."
 pos = [.1, .2, .3, .4, .5, .6, .7, .8, .9, 1]
 for p in pos:
 	ref.ref[ha.RHP] = -p
@@ -55,44 +59,36 @@ for p in pos:
 
 	sWait(.1)
 
-sWait(.2)
+sWait(2)
 
-i = 0
+
+print "Doing the deed ..."
+f = 1.0 	# frequency in Hz
+# Get the current feed-forward (state) 
+[statuss, framesizes] = s.get(state, wait=False, last=False)
+
+tic = state.time
 while(1):
-	pos = [.1, .4, .5, .7, .8]
-	for p in pos:
-		ref.ref[ha.LHP] = -p
-		ref.ref[ha.LKN] = 2*p
-		ref.ref[ha.LAP] = -p
-		ref.ref[ha.LSR] = p + .1
-		ref.ref[ha.LHR] = -(.17 - (p*.1))
-		#ref.ref[ha.LAR] = (.17 + (p*.1))
-		#ref.ref[ha.RHR] = -(.17 + (p*.1))
-		#ref.ref[ha.RAR] = (.17 + (p*.1))
-
-		# Write to the feed-forward channel
-		r.put(ref)
-
-		sWait(.1)
+	# Get the current feed-forward (state) 
+	[statuss, framesizes] = s.get(state, wait=False, last=False)
+	delT = state.time - tic
+	p = ( math.cos(2.0 * math.pi * f * delT) - 1.0 ) / 2.0
+	p = 0.7 * p
 	
-	pos = [.7, .5, .4, .1, 0]
-	for p in pos:
-		ref.ref[ha.LHP] = -p
-		ref.ref[ha.LKN] = 2*p
-		ref.ref[ha.LAP] = -p
-		ref.ref[ha.LSR] = p + .1
-		ref.ref[ha.LHR] = -(.17 - (p*.1))
-		#ref.ref[ha.LAR] = (.17 + (p*.1))
-		#ref.ref[ha.RHR] = -(.17 + (p*.1))
-		#ref.ref[ha.RAR] = (.17 + (p*.1))
+	print "delT:\t", delT, "\tp:\t", p
+	ref.ref[ha.LHP] = p
+	ref.ref[ha.LKN] = -2.0 * p
+	ref.ref[ha.LAP] = p
+	#ref.ref[ha.LHR] = -(.17 + (p*.14))
+	#ref.ref[ha.LAR] = (.17 - (p*.15))
 
-		# Write to the feed-forward channel
-		r.put(ref)
+	# Write to the feed-forward channel
+	r.put(ref)
 
-		sWait(.1)
+	sWait(.005)
+	time.sleep(.1)
 	
-	i = i + 1
-	if (i > 5):
+	if (delT > 5):
 		break
 
 
